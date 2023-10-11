@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<AssemblyName>Orion.AspNetCore.JWTAuthentication</AssemblyName>
+		<RootNamespace>Orion.AspNetCore.JWTAuthentication</RootNamespace>
+		
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsPackable>true</IsPackable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PackageId>Orion.AspNetCore.JWTAuthentication</PackageId>
+		<PackageTags>JWT Token; JWT Authentication; JWT Service; JWT Server</PackageTags>
+	</PropertyGroup>
+
+
+	<PropertyGroup>
+		<Authors>Yiğit Sertaç Subaşı</Authors>
+		<Company>Andromedays</Company>
+		<PackageProjectUrl>https://github.com/yigitsertac/Jwt.Authentication</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/yigitsertac/Jwt.Authentication</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageVersion>1.0.0</PackageVersion>
+		<Copyright>MIT</Copyright>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<Description>Jwt Service Provider for authentication (Yiğit Sertaç Subaşı)</Description>
+		<PackageIcon>logo.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="logo.png" Pack="true" PackaagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
+	  <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.0.2" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.2" />
+	</ItemGroup>
+	
+	
+</Project>
