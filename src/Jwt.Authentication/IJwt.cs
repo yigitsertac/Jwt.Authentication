@@ -16,7 +16,7 @@ public interface IJwt
     /// <param name="username">HttpContext.User.Identity.Name</param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    string GetJwtToken(string username, List<Claim>? roles = null);
+    string GetJwtToken(string username = null, List<Claim>? roles = null);
 }
 
 /// <summary>
@@ -31,5 +31,5 @@ public interface IJwt<T> where T : JwtOptions
     /// <param name="action"></param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    string GetJwtToken(string username, Action<JwtSecurityToken> action, List<Claim>? roles = null);
+    string GetJwtToken(string username = null, List<Claim>? roles = null, Action<List<Claim>, T> claimList = null);
 }

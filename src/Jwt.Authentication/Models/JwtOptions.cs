@@ -1,18 +1,23 @@
 namespace Orion.AspNetCore.JWTAuthentication.Models;
 
 
-public abstract class JwtOptions 
+public class JwtOptions 
 {
     internal const string SectionName = "Jwt";
 
-    internal string Issuer { get; set; }
+    public JwtOptions()
+    {
+        
+    }
 
-    internal string[] Audience { get; set; }
+    public string Issuer { get; set; }
 
-    internal string TokenLifeTimeFormat { get; set; }
+    public string[] Audience { get; set; }
 
-    internal string TokenLifeTime { get; set; }
+    public string TokenLifeTimeFormat { get; set; }
 
-    internal string Key { get; set; }
+    public string TokenLifeTime { get; set; }
+
+    public string Key { get; set; }
 
 }

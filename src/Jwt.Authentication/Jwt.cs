@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Orion.AspNetCore.JWTAuthentication.Models;
@@ -15,16 +15,20 @@ namespace Orion.AspNetCore.JWTAuthentication;
 public class Jwt : IJwt
 {
     private readonly JwtOptions jwtOptions;
+    private readonly ILogger<Jwt> logger;
 
     /// <summary>
     /// Default Constructor
     /// </summary>
+    /// <param name="logger"></param>
     /// <param name="jwtParams"></param>
-    public Jwt(IOptionsMonitor<JwtOptions> jwtParams)
+    public Jwt(ILogger<Jwt> logger, IOptionsMonitor<JwtOptions> jwtParams)
     {
         if (jwtParams is null) ArgumentException.ThrowIfNullOrEmpty(nameof(jwtParams));
 
         jwtOptions = jwtParams.CurrentValue;
+
+        this.logger = logger;
     }
 
 
@@ -34,21 +38,22 @@ public class Jwt : IJwt
     /// <param name="username">HttpContext.User.Identity.Name</param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    public string GetJwtToken(string username, List<Claim>? roles = null)
+    public string GetJwtToken(string username = null, List<Claim>? roles = null)
     {
         // Set tokens claims
         var claims = new List<Claim>
-            {
+        {
                 // Unique Id for this token
                 new Claim(JwtRegisteredClaimNames.Jti , Guid.NewGuid().ToString("N",CultureInfo.CurrentCulture)),
-
-                // The username using the identity name so it fills out the HttpContext.User.Identity.Name value
-                new Claim(ClaimsIdentity.DefaultNameClaimType, username),
-
+                
                 // Ability to not been used before the token was created.
                 new Claim(JwtRegisteredClaimNames.Nbf, new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)),
+        };
 
-            };
+        if (username is not null)
+            claims.Add(
+                // The username using the identity name so it fills out the HttpContext.User.Identity.Name value
+                new Claim(ClaimsIdentity.DefaultNameClaimType, username));
 
         // Check if additional claims exist
         if (roles is not null && roles.Any())
@@ -85,6 +90,8 @@ public class Jwt : IJwt
             claims: claims,
             expires: expire.Contains("minutes", StringComparison.CurrentCultureIgnoreCase) ? DateTime.Now.AddMinutes(int.TryParse(duration, out var result) ? result : 15) : DateTime.Now.AddHours(int.TryParse(duration, out result) ? result : 24),
             signingCredentials: credentials);
+
+        logger.LogInformation("Token created on {0}.", DateTime.Now.ToString());
 
         // Return new jwt token based on the credentials and claims
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -97,16 +104,20 @@ public class Jwt : IJwt
 public class Jwt<T> : IJwt<T> where T : JwtOptions
 {
     private readonly T jwtOptions;
+    private readonly ILogger<Jwt<T>> logger;
 
     /// <summary>
     /// Default Constructor
     /// </summary>
+    /// <param name="logger"></param>
     /// <param name="jwtParams"></param>
-    public Jwt(IOptionsMonitor<T> jwtParams)
+    public Jwt(ILogger<Jwt<T>> logger, IOptionsMonitor<T> jwtParams)
     {
         if (jwtParams is null) ArgumentException.ThrowIfNullOrEmpty(nameof(jwtParams));
 
         jwtOptions = jwtParams.CurrentValue;
+
+        this.logger = logger;
     }
 
 
@@ -117,7 +128,7 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
     /// <param name="action"></param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    public string GetJwtToken(string username, Action<JwtSecurityToken> action, List<Claim>? roles = null)
+    public string GetJwtToken(string username = null, List<Claim>? roles = null, Action<List<Claim>, T> claimList = null)
     {
         // Set tokens claims
         var claims = new List<Claim>
@@ -125,13 +136,15 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
                 // Unique Id for this token
                 new Claim(JwtRegisteredClaimNames.Jti , Guid.NewGuid().ToString("N",CultureInfo.CurrentCulture)),
 
-                // The username using the identity name so it fills out the HttpContext.User.Identity.Name value
-                new Claim(ClaimsIdentity.DefaultNameClaimType, username),
-
                 // Ability to not been used before the token was created.
                 new Claim(JwtRegisteredClaimNames.Nbf, new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)),
 
         };
+
+        if (username is not null)
+            claims.Add(
+                // The username using the identity name so it fills out the HttpContext.User.Identity.Name value
+                new Claim(ClaimsIdentity.DefaultNameClaimType, username));
 
         // Check if additional claims exist
         if (roles is not null && roles.Any())
@@ -161,6 +174,9 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
                 // Use the HS256 algorithm
                 SecurityAlgorithms.HmacSha256);
 
+        if (claimList is not null)
+            claimList.Invoke(claims, jwtOptions);
+
         // Generate jwt token
         var token = new JwtSecurityToken(
             issuer: jwtOptions.Issuer,
@@ -169,7 +185,8 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
             expires: expire.Contains("minutes", StringComparison.CurrentCultureIgnoreCase) ? DateTime.Now.AddMinutes(int.TryParse(duration, out var result) ? result : 15) : DateTime.Now.AddHours(int.TryParse(duration, out result) ? result : 24),
             signingCredentials: credentials);
 
-        action?.Invoke(token);
+
+        logger.LogInformation("Token created on {}.", DateTime.Now.ToString());
 
         // Return new jwt token based on the credentials and claims
         return new JwtSecurityTokenHandler().WriteToken(token);

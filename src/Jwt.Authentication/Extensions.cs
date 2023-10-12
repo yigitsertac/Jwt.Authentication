@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orion.AspNetCore.JWTAuthentication.Models;
 
 namespace Orion.AspNetCore.JWTAuthentication.Extensions;
@@ -27,21 +30,31 @@ public static class Extensions
     /// Adds a service for the JWT token provider with option class <see cref="JwtOptions"/>
     /// </para>
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static WebApplicationBuilder AddDefaultJwtService(this WebApplicationBuilder builder)
+    public static IServiceCollection AddDefaultJwtService(this IServiceCollection services, IConfiguration configuration)
     {
-        if (builder is null)
+        if (services is null)
         {
-            throw new ArgumentNullException(nameof(builder));
+            throw new ArgumentNullException(nameof(services));
         }
 
-        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
-        builder.Services.AddScoped<IJwt, Jwt>();
+        services.AddScoped<IJwt>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<Jwt>>();
 
-        return builder;
+            var options = sp.GetRequiredService<IOptionsMonitor<JwtOptions>>();
+
+            logger.LogInformation("Adding services {0} to collection. ", nameof(IJwt));
+
+            return new Jwt(logger, options);
+        });
+
+        return services;
     }
 
     /// <summary>
@@ -62,16 +75,17 @@ public static class Extensions
     /// </para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="builder"></param>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
     /// <param name="section">The section that defines the JWT parameters in appsetting.json</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="ArgumentException"></exception>
-    public static WebApplicationBuilder AddGenericJwtService<T>(this WebApplicationBuilder builder, string section) where T : JwtOptions
+    public static IServiceCollection AddGenericJwtService<T>(this IServiceCollection services, IConfiguration configuration, string section) where T : JwtOptions
     {
-        if (builder is null)
+        if (services is null)
         {
-            throw new ArgumentNullException(nameof(builder));
+            throw new ArgumentNullException(nameof(services));
         }
 
         if (string.IsNullOrEmpty(section))
@@ -79,10 +93,19 @@ public static class Extensions
             throw new ArgumentException($"'{nameof(section)}' null veya boþ olamaz.", nameof(section));
         }
 
-        builder.Services.Configure<T>(builder.Configuration.GetSection(section));
+        services.Configure<T>(configuration.GetSection(section));
 
-        builder.Services.AddScoped(typeof(IJwt<T>), typeof(Jwt<T>));
+        services.AddScoped(typeof(IJwt<T>), sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<Jwt<T>>>();
 
-        return builder;
+            var options = sp.GetRequiredService<IOptionsMonitor<T>>();
+
+            logger.LogInformation("Adding services {0} to collection. ", nameof(IJwt<T>));
+
+            return new Jwt<T>(logger, options);
+        });
+
+        return services;
     }
 }

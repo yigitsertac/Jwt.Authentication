@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{012EC7EA-A50
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jwt.Authentication", "src\Jwt.Authentication\Jwt.Authentication.csproj", "{0C8A1DD6-CE8A-491C-B19B-78E05B743B5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.JwtToken", "Test.JwtToken\Test.JwtToken.csproj", "{12B43837-AAEC-4C52-A72E-9DC28A4E81FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,12 +19,17 @@ Global
 		{0C8A1DD6-CE8A-491C-B19B-78E05B743B5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C8A1DD6-CE8A-491C-B19B-78E05B743B5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C8A1DD6-CE8A-491C-B19B-78E05B743B5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12B43837-AAEC-4C52-A72E-9DC28A4E81FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12B43837-AAEC-4C52-A72E-9DC28A4E81FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12B43837-AAEC-4C52-A72E-9DC28A4E81FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12B43837-AAEC-4C52-A72E-9DC28A4E81FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0C8A1DD6-CE8A-491C-B19B-78E05B743B5B} = {012EC7EA-A504-456B-BB3A-66687E3ADCF3}
+		{12B43837-AAEC-4C52-A72E-9DC28A4E81FB} = {012EC7EA-A504-456B-BB3A-66687E3ADCF3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EF3FA2EC-490D-4A3F-88C0-ACC407B9CC29}
