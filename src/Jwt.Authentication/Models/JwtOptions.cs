@@ -1,10 +1,15 @@
 namespace Orion.AspNetCore.JWTAuthentication.Models;
 
-
-public class JwtOptions 
+/// <summary>
+/// 
+/// </summary>
+public class JwtOptions
 {
     internal const string SectionName = "Jwt";
 
+    /// <summary>
+    /// 
+    /// </summary>
     public JwtOptions()
     {
         

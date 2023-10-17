@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Orion.AspNetCore.JWTAuthentication.Base;
 using Orion.AspNetCore.JWTAuthentication.Models;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,11 +12,14 @@ namespace Orion.AspNetCore.JWTAuthentication;
 
 /// <summary>
 /// A generic class for the jwt token creation
+
 /// </summary>
-public class Jwt : IJwt
+public class Jwt : BaseJwt, IJwt
 {
     private readonly JwtOptions jwtOptions;
     private readonly ILogger<Jwt> logger;
+    private string[] mJwtRegisteredClaimNames = { nameof(JwtRegisteredClaimNames.Jti),
+        nameof(JwtRegisteredClaimNames.Nbf), nameof(ClaimsIdentity.DefaultNameClaimType)};
 
     /// <summary>
     /// Default Constructor
@@ -31,14 +35,19 @@ public class Jwt : IJwt
         this.logger = logger;
     }
 
-
     /// <summary>
     /// Provides new jwt token based on credentials and claims for authentication
+    /// <para>
+    /// NOTE: <see cref="JwtRegisteredClaimNames.Nbf"/>, <see cref="JwtRegisteredClaimNames.Jti"/> will be added automatically when this method called.
+    ///       If <paramref name="roles"/> has the claim type which has already been added will not be added again.
+    ///       If <paramref name="username"/> is provided, will be added to the token as <see cref="ClaimsIdentity.DefaultNameClaimType"/>
+    ///       for the HttpContext.User.Identity.Name.
+    /// </para>
     /// </summary>
     /// <param name="username">HttpContext.User.Identity.Name</param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    public string GetJwtToken(string username = null, List<Claim>? roles = null)
+    public string GetJwtToken(string? username = null, List<Claim>? roles = null)
     {
         // Set tokens claims
         var claims = new List<Claim>
@@ -60,8 +69,9 @@ public class Jwt : IJwt
         {
             foreach (var role in roles)
             {
-                // add new claims to jwt claims
-                claims.Add(role);
+                if (mJwtRegisteredClaimNames.Any(x => x != role.Type))
+                    // add new claims to jwt claims
+                    claims.Add(role);
             }
         }
 
@@ -101,10 +111,13 @@ public class Jwt : IJwt
 /// <summary>
 /// A generic class for the jwt token creation
 /// </summary>
-public class Jwt<T> : IJwt<T> where T : JwtOptions
+public class Jwt<T> : BaseJwt, IJwt<T> where T : JwtOptions
 {
     private readonly T jwtOptions;
     private readonly ILogger<Jwt<T>> logger;
+
+    private string[] mJwtRegisteredClaimNames = { nameof(JwtRegisteredClaimNames.Jti),
+        nameof(JwtRegisteredClaimNames.Nbf), nameof(ClaimsIdentity.DefaultNameClaimType)};
 
     /// <summary>
     /// Default Constructor
@@ -120,15 +133,20 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
         this.logger = logger;
     }
 
-
     /// <summary>
     /// Provides new jwt token based on credentials and claims for authentication
+    /// <para>
+    /// NOTE: <see cref="JwtRegisteredClaimNames.Nbf"/>, <see cref="JwtRegisteredClaimNames.Jti"/> will be added automatically when this method called.
+    ///       If <paramref name="roles"/> has the claim type which has already been added will not be added again.
+    ///       If <paramref name="username"/> is provided, will be added to the token as <see cref="ClaimsIdentity.DefaultNameClaimType"/>
+    ///       for the HttpContext.User.Identity.Name.
+    /// </para>
     /// </summary>
     /// <param name="username">HttpContext.User.Identity.Name</param>
-    /// <param name="action"></param>
+    /// <param name="claimList"></param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    public string GetJwtToken(string username = null, List<Claim>? roles = null, Action<List<Claim>, T> claimList = null)
+    public string GetJwtToken(string? username = null, List<Claim>? roles = null, Action<List<Claim>, T>? claimList = null)
     {
         // Set tokens claims
         var claims = new List<Claim>
@@ -151,8 +169,9 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
         {
             foreach (var role in roles)
             {
-                // add new claims to jwt claims
-                claims.Add(role);
+                if (mJwtRegisteredClaimNames.Any(x => x != role.Type))
+                    // add new claims to jwt claims
+                    claims.Add(role);
             }
         }
 
@@ -174,8 +193,7 @@ public class Jwt<T> : IJwt<T> where T : JwtOptions
                 // Use the HS256 algorithm
                 SecurityAlgorithms.HmacSha256);
 
-        if (claimList is not null)
-            claimList.Invoke(claims, jwtOptions);
+        claimList?.Invoke(claims, jwtOptions);
 
         // Generate jwt token
         var token = new JwtSecurityToken(

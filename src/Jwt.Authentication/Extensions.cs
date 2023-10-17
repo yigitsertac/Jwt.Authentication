@@ -1,9 +1,14 @@
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Orion.AspNetCore.JWTAuthentication.Models;
+using System.Text;
+using System.Text.Json;
 
 namespace Orion.AspNetCore.JWTAuthentication.Extensions;
 
@@ -29,6 +34,9 @@ public static class Extensions
     /// <para>
     /// Adds a service for the JWT token provider with option class <see cref="JwtOptions"/>
     /// </para>
+    /// <para>
+    /// Anywhere in the application call <see cref="IJwt"/>
+    /// </para>
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -49,7 +57,7 @@ public static class Extensions
 
             var options = sp.GetRequiredService<IOptionsMonitor<JwtOptions>>();
 
-            logger.LogInformation("Adding services {0} to collection. ", nameof(IJwt));
+            logger.LogInformation("Adding services {IJwt} to collection. ", nameof(IJwt));
 
             return new Jwt(logger, options);
         });
@@ -73,8 +81,11 @@ public static class Extensions
     /// <para>
     /// Adds generic service for the JWT token provider with custom option class based on <see cref="JwtOptions"/>
     /// </para>
+    /// <para>
+    /// Anywhere in the application call <see cref="IJwt{T}"/>
+    /// </para>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">A class for the options in appsettings.</typeparam>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     /// <param name="section">The section that defines the JWT parameters in appsetting.json</param>
@@ -107,5 +118,91 @@ public static class Extensions
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Adds the jwt bearer token authentication with jwt bearer configurations
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddJwtAuthRegister(this IServiceCollection services, IConfiguration configuration)
+    {
+        
+        services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearerConfiguration(configuration);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the jwt bearer token configuration
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    private static AuthenticationBuilder AddJwtBearerConfiguration(this AuthenticationBuilder builder, IConfiguration configuration)
+    {
+        JwtOptions jwtOptions = new();
+
+        configuration.GetSection(JwtOptions.SectionName).Bind(jwtOptions);
+
+        return builder.AddJwtBearer(options =>
+        {
+            options.Audience = string.Join(string.Empty, jwtOptions.Audience);
+
+            options.TokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidateIssuer = true,
+                ClockSkew = new TimeSpan(0, 0, 30),
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtOptions.Issuer,
+                ValidAudiences = jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key))
+            };
+
+            options.Events = new JwtBearerEvents()
+            {
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                    context.Response.ContentType = "application/json";
+
+                    // Ensure we always have an error and error description.
+                    if (string.IsNullOrEmpty(context.Error))
+                        context.Error = "Invalid Token";
+
+                    if (string.IsNullOrEmpty(context.ErrorDescription))
+                        context.ErrorDescription = "This request requires a valid JWT access token to be provided";
+
+                    // Add some extra context for expired tokens.
+                    if (context.AuthenticateFailure != null && context.AuthenticateFailure.GetType() == typeof(SecurityTokenExpiredException))
+                    {
+                        var authenticationException = context.AuthenticateFailure as SecurityTokenExpiredException;
+
+                        context.Response.Headers.Add("x-token-expired", $"{authenticationException.Expires:o}");
+
+                        context.ErrorDescription = $"The token expired on {authenticationException.Expires:o}";
+                    }
+
+                    return context.Response.WriteAsync(JsonSerializer.Serialize(new
+                    {
+                        error = context.Error,
+                        error_description = context.ErrorDescription
+                    }));
+                }
+            };
+        });
     }
 }
