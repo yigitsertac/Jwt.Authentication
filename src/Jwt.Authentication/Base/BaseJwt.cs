@@ -20,6 +20,5 @@ public class BaseJwt
         rnd.GetBytes(bytes);
 
         return Convert.ToBase64String(bytes);
-        
     }
 }

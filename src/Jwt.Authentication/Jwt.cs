@@ -35,6 +35,8 @@ public class Jwt : BaseJwt, IJwt
         this.logger = logger;
     }
 
+    public string CreateRefreshToken() => base.CreateRefreshToken();
+
     /// <summary>
     /// Provides new jwt token based on credentials and claims for authentication
     /// <para>
@@ -106,6 +108,8 @@ public class Jwt : BaseJwt, IJwt
         // Return new jwt token based on the credentials and claims
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+
 }
 
 /// <summary>
@@ -132,6 +136,12 @@ public class Jwt<T> : BaseJwt, IJwt<T> where T : JwtOptions
 
         this.logger = logger;
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public string CreateRefreshToken() => base.CreateRefreshToken();
 
     /// <summary>
     /// Provides new jwt token based on credentials and claims for authentication

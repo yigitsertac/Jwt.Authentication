@@ -1,7 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using Orion.AspNetCore.JWTAuthentication.Models;
-using System.IdentityModel.Tokens.Jwt;
+﻿using Orion.AspNetCore.JWTAuthentication.Models;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace Orion.AspNetCore.JWTAuthentication;
 
@@ -17,6 +16,13 @@ public interface IJwt
     /// <param name="roles"></param>
     /// <returns></returns>
     string GetJwtToken(string username = null, List<Claim>? roles = null);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    string CreateRefreshToken();
+   
 }
 
 /// <summary>
@@ -32,4 +38,10 @@ public interface IJwt<T> where T : JwtOptions
     /// <param name="roles"></param>
     /// <returns></returns>
     string GetJwtToken(string username = null, List<Claim>? roles = null, Action<List<Claim>, T> claimList = null);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    string CreateRefreshToken();
 }

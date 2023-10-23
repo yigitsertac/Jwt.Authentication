@@ -10,7 +10,7 @@ using Orion.AspNetCore.JWTAuthentication.Models;
 using System.Text;
 using System.Text.Json;
 
-namespace Orion.AspNetCore.JWTAuthentication.Extensions;
+namespace Orion.AspNetCore.JWTAuthentication;
 
 /// <summary>
 /// 
